@@ -30,6 +30,10 @@ groq_client = Groq(api_key=groq_api_key) if groq_api_key else None
 
 
 class AiScoreRequest(BaseModel):
+    """
+    Data Transfer Object (DTO) for incoming Lead data.
+    Maps exactly to the JSON payload sent by the Java service.
+    """
     id: str
     name: Optional[str] = None
     contact: Optional[str] = None
@@ -40,6 +44,10 @@ class AiScoreRequest(BaseModel):
 
 
 class AiScoreResponse(BaseModel):
+    """
+    Data Transfer Object (DTO) for the outgoing AI response.
+    Contains the calculated score, category (HOT/WARM/COLD), and reasoning.
+    """
     id: str
     score: int
     category: str
@@ -49,6 +57,10 @@ class AiScoreResponse(BaseModel):
 
 
 def build_prompt(req: AiScoreRequest) -> str:
+    """
+    Constructs a strict prompt for the AI models.
+    Instructs the AI to analyze the lead and return a JSON containing score, category, and reason.
+    """
     return f"""
     Analyze the following lead data and provide a score between 0 and 100, a category (HOT, WARM, or COLD), and a short reason.
     Return ONLY a valid JSON object with keys: "score", "category", "reason".
@@ -64,6 +76,11 @@ def build_prompt(req: AiScoreRequest) -> str:
 
 
 def generate_mock_score(req: AiScoreRequest) -> AiScoreResponse:
+    """
+    Fallback deterministic scoring logic.
+    Used only when both Gemini and Groq AI APIs are unavailable.
+    Ensures the application does not crash.
+    """
     score = 50
     if req.budget and req.budget > 10000:
         score += 30
@@ -93,6 +110,11 @@ def parse_json_response(result_text: str) -> dict:
 
 
 def call_gemini(req: AiScoreRequest) -> Optional[AiScoreResponse]:
+    """
+    Primary AI Scoring function using Google Gemini API.
+    Parses the JSON response from Gemini into an AiScoreResponse object.
+    Returns None if the API call fails.
+    """
     if not gemini_client:
         return None
 
@@ -151,6 +173,12 @@ def call_groq(req: AiScoreRequest) -> Optional[AiScoreResponse]:
 
 
 def call_ai(req: AiScoreRequest) -> AiScoreResponse:
+    """
+    Multi-tiered failover orchestration function.
+    1. Attempts to score the lead using Gemini.
+    2. If Gemini fails, falls back to Groq.
+    3. If Groq fails, falls back to the local Mock Scoring.
+    """
     # 1st try: Gemini
     result = call_gemini(req)
     if result:
