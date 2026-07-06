@@ -22,9 +22,10 @@ This service acts as an independent, stateless ML node:
 - pip (Python package installer)
 
 ### 2. Environment Configuration
-Create a `.env` file in the root of the project with your Gemini API Key:
+Create a `.env` file in the root of the project with your Gemini and Groq API Keys:
 ```env
 GEMINI_API_KEY=your_actual_gemini_api_key_here
+GROQ_API_KEY=your_actual_groq_api_key_here
 ```
 *Note: The `.env` file is ignored in version control for security.*
 
